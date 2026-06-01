@@ -1,0 +1,48 @@
+# 依赖
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 环境
+.env
+*.env.local
+venv/
+.venv/
+
+# 上传文件
+uploads/*
+!uploads/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# 数据库
+*.db
+*.sqlite3
+migrations/versions/
+
+# 系统
+.DS_Store
+Thumbs.db
+*.log
+
+# 迁移（保留目录结构）
+!migrations/.gitkeep
+!uploads/.gitkeep
