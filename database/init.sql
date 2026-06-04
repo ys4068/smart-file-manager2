@@ -1,14 +1,10 @@
--- ============================================
--- 智能文件/书签管理系统 - 数据库初始化脚本
--- ============================================
-
+-- 智能文件/书签管理系统 - 数据库初始化
 CREATE DATABASE IF NOT EXISTS smart_file_manager
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_unicode_ci;
 
 USE smart_file_manager;
 
--- 用户表
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -20,12 +16,11 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 文件夹表（嵌套目录结构）
 CREATE TABLE IF NOT EXISTS folders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
     parent_id INT DEFAULT NULL,
-    level INT DEFAULT 0 COMMENT '嵌套层级，最大5层',
+    level INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     user_id INT NOT NULL,
@@ -35,25 +30,22 @@ CREATE TABLE IF NOT EXISTS folders (
     INDEX idx_parent_id (parent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 文件表
 CREATE TABLE IF NOT EXISTS files (
     id INT AUTO_INCREMENT PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL UNIQUE,
     filename VARCHAR(256) NOT NULL,
     original_name VARCHAR(256) NOT NULL,
     file_size BIGINT DEFAULT 0,
-    file_type VARCHAR(20) NOT NULL COMMENT 'document/image/video/audio/archive/other',
+    file_type VARCHAR(20) NOT NULL,
     mime_type VARCHAR(128),
     description TEXT,
     tags VARCHAR(500) DEFAULT '',
-    category VARCHAR(50) DEFAULT '未分类',
+    category VARCHAR(50) DEFAULT 'uncategorized',
     download_count INT DEFAULT 0,
     is_favorite BOOLEAN DEFAULT FALSE,
-    -- 权限相关字段
-    is_public BOOLEAN DEFAULT FALSE COMMENT '是否公开',
-    share_token VARCHAR(64) UNIQUE COMMENT '分享链接令牌',
-    access_level VARCHAR(16) DEFAULT 'private' COMMENT 'private/shared/public',
-    -- 文件夹关联
+    is_public BOOLEAN DEFAULT FALSE,
+    share_token VARCHAR(64) UNIQUE,
+    access_level VARCHAR(16) DEFAULT 'private',
     folder_id INT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -67,14 +59,13 @@ CREATE TABLE IF NOT EXISTS files (
     INDEX idx_share_token (share_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 书签表
 CREATE TABLE IF NOT EXISTS bookmarks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(256) NOT NULL,
     url VARCHAR(2048) NOT NULL,
     description TEXT,
     tags VARCHAR(500) DEFAULT '',
-    category VARCHAR(50) DEFAULT '未分类',
+    category VARCHAR(50) DEFAULT 'uncategorized',
     favicon VARCHAR(512) DEFAULT '',
     visit_count INT DEFAULT 0,
     is_favorite BOOLEAN DEFAULT FALSE,
