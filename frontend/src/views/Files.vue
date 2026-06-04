@@ -481,7 +481,7 @@ async function handleUpload() {
 }
 
 function handleDownload(row) {
-  window.open(`/api/files/${row.id}/download?token=${localStor…m("token")}`);
+  window.open(`/api/files/${row.id}/download?token=${localStorage.getItem("token")}`);
 }
 
 function openEdit(row) {
