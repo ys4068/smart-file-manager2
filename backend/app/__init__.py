@@ -32,12 +32,14 @@ def create_app(config_name="default"):
     from .routes.bookmarks import bookmarks_bp
     from .routes.dashboard import dashboard_bp
     from .routes.search import search_bp
+    from .routes.folders import folders_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(files_bp, url_prefix="/api/files")
     app.register_blueprint(bookmarks_bp, url_prefix="/api/bookmarks")
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
     app.register_blueprint(search_bp, url_prefix="/api/search")
+    app.register_blueprint(folders_bp, url_prefix="/api/folders")
 
     # Health check
     @app.route("/api/health")

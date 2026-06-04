@@ -20,6 +20,21 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 文件夹表（嵌套目录结构）
+CREATE TABLE IF NOT EXISTS folders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    parent_id INT DEFAULT NULL,
+    level INT DEFAULT 0 COMMENT '嵌套层级，最大5层',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_parent_id (parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 文件表
 CREATE TABLE IF NOT EXISTS files (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -27,20 +42,29 @@ CREATE TABLE IF NOT EXISTS files (
     filename VARCHAR(256) NOT NULL,
     original_name VARCHAR(256) NOT NULL,
     file_size BIGINT DEFAULT 0,
-    file_type VARCHAR(20) NOT NULL,
+    file_type VARCHAR(20) NOT NULL COMMENT 'document/image/video/audio/archive/other',
     mime_type VARCHAR(128),
     description TEXT,
     tags VARCHAR(500) DEFAULT '',
     category VARCHAR(50) DEFAULT '未分类',
     download_count INT DEFAULT 0,
     is_favorite BOOLEAN DEFAULT FALSE,
+    -- 权限相关字段
+    is_public BOOLEAN DEFAULT FALSE COMMENT '是否公开',
+    share_token VARCHAR(64) UNIQUE COMMENT '分享链接令牌',
+    access_level VARCHAR(16) DEFAULT 'private' COMMENT 'private/shared/public',
+    -- 文件夹关联
+    folder_id INT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     user_id INT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL,
     INDEX idx_user_id (user_id),
     INDEX idx_category (category),
-    INDEX idx_file_type (file_type)
+    INDEX idx_file_type (file_type),
+    INDEX idx_folder_id (folder_id),
+    INDEX idx_share_token (share_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 书签表
