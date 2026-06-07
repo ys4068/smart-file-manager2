@@ -18,13 +18,32 @@ def create_app(config_name="default"):
     # Extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"], supports_credentials=True)
+    CORS(app, supports_credentials=True)
     jwt.init_app(app)
 
     # Ensure upload folder
     import os
 
+    # Serve frontend static files
+    frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "../frontend/dist")
+    frontend_dist = os.path.abspath(frontend_dist)
+    app.static_folder = os.path.join(frontend_dist, "assets")
+    app.static_url_path = "/assets"
+
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    # Serve index.html for all non-API routes (SPA)
+    from flask import send_from_directory, abort
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        # Skip API routes
+        if path.startswith("api/"):
+            abort(404)
+        # Try to serve the requested file, fall back to index.html (SPA routing)
+        if path and os.path.isfile(os.path.join(frontend_dist, path)):
+            return send_from_directory(frontend_dist, path)
+        return send_from_directory(frontend_dist, "index.html")
 
     # Register blueprints
     from .routes.auth import auth_bp

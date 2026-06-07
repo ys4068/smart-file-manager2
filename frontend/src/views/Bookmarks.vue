@@ -90,7 +90,25 @@
           <el-input v-model="addForm.title" placeholder="书签标题" />
         </el-form-item>
         <el-form-item label="URL" prop="url">
-          <el-input v-model="addForm.url" placeholder="https://..." />
+          <el-input v-model="addForm.url" placeholder="https://..." @blur="handleUrlBlur">
+            <template #append>
+              <el-button :loading="urlSuggesting" @click="handleUrlSuggest">
+                🔍 智能分析
+              </el-button>
+            </template>
+          </el-input>
+        </el-form-item>
+        <!-- URL 智能建议结果 -->
+        <el-form-item v-if="urlSuggest" label="建议" class="url-suggest-box">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:13px;color:#999">分类 →</span>
+            <el-tag type="success" size="small">{{ urlSuggest.suggested_category }}</el-tag>
+            <el-button size="small" type="primary" link @click="applyUrlSuggest">应用建议</el-button>
+          </div>
+          <div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <span style="font-size:12px;color:#999">标签 →</span>
+            <el-tag v-for="t in urlSuggest.suggested_tags" :key="t" size="small" type="info">{{ t }}</el-tag>
+          </div>
         </el-form-item>
         <el-form-item label="分类">
           <el-input v-model="addForm.category" placeholder="如：技术博客" />
@@ -156,6 +174,8 @@ const page = ref(1);
 const perPage = ref(9);
 const total = ref(0);
 const saving = ref(false);
+const urlSuggesting = ref(false);
+const urlSuggest = ref(null);
 
 const showAdd = ref(false);
 const addFormRef = ref(null);
@@ -221,22 +241,56 @@ async function handleAdd() {
 
   saving.value = true;
   try {
-    await api.post("/bookmarks", {
+    const data = {
       title: addForm.value.title,
       url: addForm.value.url,
       category: addForm.value.category || "未分类",
       tags: addForm.value.tags.split(",").map((t) => t.trim()).filter(Boolean),
       description: addForm.value.description,
       is_read_later: addForm.value.is_read_later,
-    });
+    };
+    await api.post("/bookmarks", data);
     ElMessage.success("添加成功");
     showAdd.value = false;
     addForm.value = { title: "", url: "", category: "", tags: "", description: "", is_read_later: false };
+    urlSuggest.value = null;
     fetchBookmarks();
     fetchCategories();
   } finally {
     saving.value = false;
   }
+}
+
+async function handleUrlSuggest() {
+  if (!addForm.value.url.trim()) return;
+  urlSuggesting.value = true;
+  try {
+    const res = await api.post("/search/suggest-url", { url: addForm.value.url });
+    urlSuggest.value = res;
+  } catch {
+    // handled by interceptor
+  } finally {
+    urlSuggesting.value = false;
+  }
+}
+
+function handleUrlBlur() {
+  if (addForm.value.url.trim() && (!addForm.value.category || addForm.value.category === "未分类")) {
+    handleUrlSuggest();
+  }
+}
+
+function applyUrlSuggest() {
+  if (!urlSuggest.value) return;
+  if (urlSuggest.value.suggested_category && urlSuggest.value.suggested_category !== "未分类") {
+    addForm.value.category = urlSuggest.value.suggested_category;
+  }
+  if (urlSuggest.value.suggested_tags && urlSuggest.value.suggested_tags.length) {
+    const existing = addForm.value.tags.split(",").map(t => t.trim()).filter(Boolean);
+    const merged = [...new Set([...existing, ...urlSuggest.value.suggested_tags])];
+    addForm.value.tags = merged.join(", ");
+  }
+  ElMessage.success("已应用智能建议");
 }
 
 function openEdit(row) {
@@ -350,5 +404,11 @@ onMounted(() => {
 .bookmark-actions {
   display: flex;
   flex-shrink: 0;
+}
+.url-suggest-box :deep(.el-form-item__content) {
+  background: #f0f9ff;
+  border: 1px dashed #91d5ff;
+  border-radius: 6px;
+  padding: 8px 12px;
 }
 </style>
