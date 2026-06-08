@@ -191,7 +191,25 @@
           />
         </el-form-item>
         <el-form-item label="分类">
-          <el-input v-model="uploadForm.category" placeholder="如：技术文档" />
+          <el-input v-model="uploadForm.category" placeholder="如：技术文档">
+            <template #append>
+              <el-button :loading="fileSuggesting" @click="handleFileSuggest" title="根据文件名智能分析">
+                🔍 智能分析
+              </el-button>
+            </template>
+          </el-input>
+        </el-form-item>
+        <!-- 智能建议结果 -->
+        <el-form-item v-if="fileSuggest" label="建议" class="file-suggest-box">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:12px;color:#999">分类 →</span>
+            <el-tag type="success" size="small">{{ fileSuggest.suggested_category }}</el-tag>
+            <el-button size="small" type="primary" link @click="applyFileSuggest">应用建议</el-button>
+          </div>
+          <div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <span style="font-size:12px;color:#999">标签 →</span>
+            <el-tag v-for="t in fileSuggest.suggested_tags" :key="t" size="small" type="info">{{ t }}</el-tag>
+          </div>
         </el-form-item>
         <el-form-item label="标签">
           <el-input v-model="uploadForm.tags" placeholder="逗号分隔" />
@@ -323,6 +341,8 @@ const uploading = ref(false);
 const uploadRef = ref(null);
 const uploadFile = ref(null);
 const uploadForm = ref({ folder_id: null, category: "", tags: "", description: "" });
+const fileSuggesting = ref(false);
+const fileSuggest = ref(null);
 
 const showEdit = ref(false);
 const editFileId = ref(null);
@@ -457,7 +477,14 @@ async function deleteFolder(data) {
 
 // ---- 文件操作 ----
 
-function handleFileChange(file) { uploadFile.value = file.raw; }
+function handleFileChange(file) { 
+  uploadFile.value = file.raw;
+  fileSuggest.value = null;
+  // 选完文件自动触发智能分析
+  if (file.raw?.name) {
+    handleFileSuggest();
+  }
+}
 
 async function handleUpload() {
   if (!uploadFile.value) { ElMessage.warning("请先选择文件"); return; }
@@ -474,10 +501,41 @@ async function handleUpload() {
     showUpload.value = false;
     uploadForm.value = { folder_id: null, category: "", tags: "", description: "" };
     uploadFile.value = null;
+    fileSuggest.value = null;
     fetchFiles();
     fetchFolders();
     fetchCategories();
   } finally { uploading.value = false; }
+}
+
+async function handleFileSuggest() {
+  const text = uploadFile.value?.name || uploadForm.value.description || "";
+  if (!text.trim()) {
+    ElMessage.warning("请先选择文件或输入描述");
+    return;
+  }
+  fileSuggesting.value = true;
+  try {
+    const res = await api.post("/search/suggest", { text });
+    fileSuggest.value = res;
+  } catch {
+    // handled by interceptor
+  } finally {
+    fileSuggesting.value = false;
+  }
+}
+
+function applyFileSuggest() {
+  if (!fileSuggest.value) return;
+  if (fileSuggest.value.suggested_category && fileSuggest.value.suggested_category !== "未分类") {
+    uploadForm.value.category = fileSuggest.value.suggested_category;
+  }
+  if (fileSuggest.value.suggested_tags && fileSuggest.value.suggested_tags.length) {
+    const existing = uploadForm.value.tags.split(",").map(t => t.trim()).filter(Boolean);
+    const merged = [...new Set([...existing, ...fileSuggest.value.suggested_tags])];
+    uploadForm.value.tags = merged.join(", ");
+  }
+  ElMessage.success("已应用智能建议");
 }
 
 function handleDownload(row) {
@@ -588,4 +646,10 @@ onMounted(() => {
 .folder-node:hover .folder-actions { display: flex; }
 .files-main { flex: 1; min-width: 0; }
 .file-name-cell { display: flex; align-items: center; gap: 6px; }
+.file-suggest-box :deep(.el-form-item__content) {
+  background: #f0f9ff;
+  border: 1px dashed #91d5ff;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
 </style>

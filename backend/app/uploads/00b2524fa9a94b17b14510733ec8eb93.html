@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>在线随机点名系统</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; padding: 20px; }
+        #display { font-size: 3em; color: #e74c3c; margin: 2rem 0; min-height: 100px; }
+        button { padding: 12px 24px; font-size: 1.2em; margin: 5px; cursor: pointer; }
+        .history { border-top: 2px solid #eee; margin-top: 2rem; padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <h1>随机点名系统 <small>共66人</small></h1>
+    
+    <div id="display">点击开始按钮</div>
+    
+    <button onclick="startRoll()">开始点名</button>
+    <button onclick="reset()">重置系统</button>
+    <button onclick="toggleSound()">提示音: ✔️</button>
+    
+    <div class="history">
+        <h3>已点名单（<span id="count">0</span>/66）:</h3>
+        <div id="historyList"></div>
+    </div>
+
+    <script>
+        // 嵌入您提供的姓名数据
+        const names = [
+            "徐克俭", "石笑迪", "李鑫宇", "杨顺", "崔冰辉", "田博文", "张梦杨",
+            "宋喻飞", "徐建业", "侯福林", "马楠珂", "杨连超", "曹晓璐", "贾锦泊",
+            "马润", "胡诗诗", "马青青", "王文龙", "王晨辉", "米奧康", "阴如阳",
+            "张开心", "段梦丹", "郑世伟", "许田振", "魏鑫鑫", "杨柳", "苏培硕",
+            "崔鹤磊", "燕赛玲", "苗林森", "王露颖", "程克宁", "王凯", "张润泽",
+            "王哲晨", "肖思柯", "姜呈浩", "杨岩", "王郇", "魏家毅", "王稳", "孔傲雪",
+            "王炳博", "吴康乐", "吕双印", "韩艺", "苏昊", "郭敬涛", "段智博", "徐一鸣",
+            "张建辉", "向德岭", "吴江楠", "杜海英", "齐亿林", "马金凤", "冯泽闻",
+            "李佳强", "张毅琳", "雷子霆", "曹子毅", "徐培全", "艾玉龙", "翟志远"
+        ];
+
+        let remaining = [...names];
+        let soundEnabled = true;
+        let intervalId;
+
+        function startRoll() {
+            if (remaining.length === 0) {
+                alert("所有人已点完！");
+                return;
+            }
+
+            // 随机动画效果
+            let count = 0;
+            intervalId = setInterval(() => {
+                const tempName = remaining[Math.floor(Math.random() * remaining.length)];
+                document.getElementById("display").innerHTML = tempName;
+                if (count++ > 15) selectWinner();
+            }, 50);
+        }
+
+        function selectWinner() {
+            clearInterval(intervalId);
+            const index = Math.floor(Math.random() * remaining.length);
+            const selected = remaining.splice(index, 1)[0];
+            
+            document.getElementById("display").innerHTML = `<b>🎉 ${selected}</b>`;
+            if (soundEnabled) new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU').play();
+            
+            // 更新记录
+            document.getElementById("historyList").innerHTML += selected + " ";
+            document.getElementById("count").textContent = names.length - remaining.length;
+        }
+
+        function reset() {
+            remaining = [...names];
+            document.getElementById("historyList").innerHTML = "";
+            document.getElementById("count").textContent = 0;
+            document.getElementById("display").innerHTML = "系统已重置";
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.querySelector("button:nth-child(3)").innerHTML = 
+                `提示音: ${soundEnabled ? '✔️' : '❌'}`;
+        }
+    </script>
+</body>
+</html>
