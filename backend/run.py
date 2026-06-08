@@ -1,4 +1,8 @@
 """应用入口"""
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+
 from app import create_app, db
 from flask_migrate import Migrate
 

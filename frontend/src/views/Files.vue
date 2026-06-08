@@ -264,7 +264,7 @@ function formatDate(date) {
 function fileIcon(type) {
   const map = { pdf: 'Document', doc: 'Document', docx: 'Document', xls: 'Grid', xlsx: 'Grid',
     ppt: 'DataAnalysis', pptx: 'DataAnalysis', png: 'Picture', jpg: 'Picture', jpeg: 'Picture',
-    gif: 'PictureFilled', zip: 'Box', rar: 'Box', 7z: 'Box', txt: 'Tickets', md: 'Tickets',
+    gif: 'PictureFilled', zip: 'Box', rar: 'Box', '7z': 'Box', txt: 'Tickets', md: 'Tickets',
     py: 'Monitor', js: 'Monitor', html: 'Monitor', css: 'Monitor', json: 'Monitor' }
   return map[type] || 'Folder'
 }
