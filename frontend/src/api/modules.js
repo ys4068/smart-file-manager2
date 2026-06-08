@@ -21,6 +21,7 @@ export const filesAPI = {
   update: (id, data) => api.put(`/files/${id}`, data),
   delete: (id) => api.delete(`/files/${id}`),
   updateTags: (id, tagIds) => api.put(`/files/${id}/tags`, { tag_ids: tagIds }),
+  suggest: (data) => api.post('/files/suggest', data),
   types: () => api.get('/files/types'),
   downloadUrl: (id) => `/api/files/${id}/download`,
 }

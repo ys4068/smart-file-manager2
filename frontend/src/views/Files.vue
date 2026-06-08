@@ -82,7 +82,20 @@
     <el-dialog v-model="editVisible" title="编辑文件信息" width="500px">
       <el-form :model="editForm" label-position="top">
         <el-form-item label="描述">
-          <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="添加文件描述..." />
+          <div style="display:flex;gap:8px;width:100%">
+            <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="添加文件描述..." style="flex:1" />
+            <el-button :loading="editSuggesting" @click="handleEditSuggest" style="align-self:flex-end">
+              🔍 智能分析
+            </el-button>
+          </div>
+        </el-form-item>
+        <!-- 智能建议结果 -->
+        <el-form-item v-if="editSuggest" label="建议" class="file-suggest-box">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:12px;color:#999">标签 →</span>
+            <el-tag v-for="t in editSuggest.suggested_tags" :key="t" size="small" type="info">{{ t }}</el-tag>
+            <el-button size="small" type="primary" link @click="applyEditSuggest">应用建议</el-button>
+          </div>
         </el-form-item>
         <el-form-item label="标签">
           <el-select v-model="editForm.tag_ids" multiple placeholder="选择标签" style="width: 100%">
@@ -118,6 +131,8 @@ const fileTypes = ref([])
 const allTags = ref([])
 const editVisible = ref(false)
 const editForm = ref({})
+const editSuggesting = ref(false)
+const editSuggest = ref(null)
 let searchTimer = null
 
 async function fetchFiles() {
@@ -175,7 +190,42 @@ function editFile(row) {
     tag_ids: row.tags.map(t => t.id),
     is_favorite: row.is_favorite,
   }
+  editSuggest.value = null
   editVisible.value = true
+}
+
+async function handleEditSuggest() {
+  const text = editForm.value.description || ''
+  if (!text.trim()) {
+    ElMessage.warning('请先填写描述内容')
+    return
+  }
+  editSuggesting.value = true
+  try {
+    const res = await filesAPI.suggest({ text })
+    editSuggest.value = res.data
+  } catch { /* */ }
+  finally { editSuggesting.value = false }
+}
+
+function applyEditSuggest() {
+  if (!editSuggest.value) return
+  const suggestedTags = editSuggest.value.suggested_tags || []
+  if (suggestedTags.length) {
+    // 将建议的标签名匹配到已有标签 ID
+    const suggestedIds = []
+    for (const name of suggestedTags) {
+      const match = allTags.value.find(t => t.name.toLowerCase() === name.toLowerCase())
+      if (match) suggestedIds.push(match.id)
+    }
+    if (suggestedIds.length) {
+      const existing = editForm.value.tag_ids || []
+      editForm.value.tag_ids = [...new Set([...existing, ...suggestedIds])]
+      ElMessage.success('已应用智能建议')
+    } else {
+      ElMessage.info('建议的标签尚未创建，请先创建对应标签')
+    }
+  }
 }
 
 async function saveFile() {
@@ -237,4 +287,10 @@ onMounted(() => {
 }
 .toolbar-left { display: flex; align-items: center; }
 .toolbar-right { display: flex; align-items: center; }
+.file-suggest-box :deep(.el-form-item__content) {
+  background: #f0f9ff;
+  border: 1px dashed #91d5ff;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
 </style>

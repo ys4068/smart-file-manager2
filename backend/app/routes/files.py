@@ -3,6 +3,7 @@ import os
 import uuid
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from ..utils.ai_tags import suggest_tags
 from werkzeug.utils import secure_filename
 from .. import db
 from ..models.file import FileItem
@@ -196,6 +197,24 @@ def update_file_tags(file_id):
     db.session.commit()
 
     return jsonify({'code': 200, 'msg': '标签更新成功', 'data': file_item.to_dict()})
+
+
+@files_bp.route('/suggest', methods=['POST'])
+@jwt_required()
+def suggest_file_info():
+    """智能分析文件名/描述，建议标签"""
+    data = request.get_json()
+    text = data.get('text', '') if data else ''
+    if not text.strip():
+        return jsonify({'code': 400, 'msg': '请输入分析文本'}), 400
+
+    suggested_tags = suggest_tags(text)
+    return jsonify({
+        'code': 200,
+        'data': {
+            'suggested_tags': suggested_tags,
+        }
+    })
 
 
 @files_bp.route('/types', methods=['GET'])
